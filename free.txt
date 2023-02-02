@@ -1,0 +1,7 @@
+Pieces:
+    -   pawn
+    -   king
+    -   queen
+    -   knight
+    -   bishop
+    -   rook
