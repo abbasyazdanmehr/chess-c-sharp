@@ -41,6 +41,8 @@ namespace Chess
 
     public class Game
     {
+        static List<Coordinate> possibles = new List<Coordinate>();
+
         public static int Start()
         {
             System.Console.WriteLine("Game Started ...");
@@ -58,6 +60,8 @@ namespace Chess
             {
                 Board.PrintBoard();
 
+                ClearPossibles();
+
                 System.Console.Write(current + " Choose Piece Coordinate: ");
                 string command1 = Console.ReadLine();
 
@@ -73,14 +77,14 @@ namespace Chess
                 Piece selectedPiece = Board.GetPiece(selectedCoordinate);
                 System.Console.WriteLine(selectedPiece);
 
-                // List<Coordinate> possibles = PiecePossibleMoves(selectedPiece, selectedCoordinate);
-                // InsertPossibles(possibles);
+                PiecePossibleMoves(selectedPiece, selectedCoordinate);
+                InsertPossibles();
             }
 
             return 0;
         }
 
-        public static void InsertPossibles(List<Coordinate> possibles)
+        public static void InsertPossibles()
         {
             foreach (var possible in possibles)
             {
@@ -88,42 +92,50 @@ namespace Chess
             }
         }
 
-        public static List<Coordinate> PiecePossibleMoves(Piece piece, Coordinate coordinate)
+        public static void ClearPossibles()
+        {
+            foreach (var possible in possibles)
+            {
+                Board.InsertPiece(possible, Board.blankPiece);
+            }
+            possibles.Clear();
+        }
+
+        public static void PiecePossibleMoves(Piece piece, Coordinate coordinate)
         {
             // switch case is bullshit in syntax (but better at performance)
             if (piece.name == PieceName.PAWN)
             {
-                return PAWNPassibleMoves(coordinate, piece.color);
+                PAWNPassibleMoves(coordinate, piece.color);
             }
             // else if (PieceName == PieceName.KING)
             // {
-            //     return KINGPassibleMoves(coordinate);
+            //     KINGPassibleMoves(coordinate);
             // }
             // else if (PieceName == PieceName.QUEEN)
             // {
-            //     return QUEENPassibleMoves(coordinate);
+            //     QUEENPassibleMoves(coordinate);
             // }
             // else if (PieceName == PieceName.KNIGHT)
             // {
-            //     return KNIGHTPassibleMoves(coordinate);
+            //     KNIGHTPassibleMoves(coordinate);
             // }
             // else if (PieceName == PieceName.BISHOP)
             // {
-            //     return BISHOPPassibleMoves(coordinate);
+            //     BISHOPPassibleMoves(coordinate);
             // }
             // else if (PieceName == PieceName.ROOK)
             // {
-            //     return ROOKPassibleMoves(coordinate);
+            //     ROOKPassibleMoves(coordinate);
             // }
             else
             {
-                throw new Exception("Wrong Piece in PiecePossibleMoves");
+                throw new Exception("$ AY: Wrong Piece in PiecePossibleMoves");
             }
         }
 
-        public static List<Coordinate> PAWNPassibleMoves(Coordinate coordinate, PieceColor color)
+        public static void PAWNPassibleMoves(Coordinate coordinate, PieceColor color)
         {
-            List<Coordinate> possibles = new List<Coordinate>();
             if (color == PieceColor.WHITE)
             {
                 if (coordinate.y == 6)
@@ -132,7 +144,14 @@ namespace Chess
                 }
                 possibles.Add(new Coordinate(coordinate.x, coordinate.y - 1));
             }
-            return possibles;
+            else if (color == PieceColor.BLACK)
+            {
+                if (coordinate.y == 1)
+                {
+                    possibles.Add(new Coordinate(coordinate.x, coordinate.y + 2));
+                }
+                possibles.Add(new Coordinate(coordinate.x, coordinate.y + 1));
+            }
         }
 
         // public List<Coordinate> KINGPassibleMoves(Coordinate coordinate) { }
