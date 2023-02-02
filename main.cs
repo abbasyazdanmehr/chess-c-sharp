@@ -308,27 +308,35 @@ namespace Chess
 
         public static void PrintBoard()
         {
-            System.Console.Write("+");
+            System.Console.Write("  +");
             System.Console.WriteLine(Stringer.StringRepeat("-----+", colsCount));
 
             for (int i = 0; i < rowsCount; i++)
             {
-                System.Console.Write("|");
+                System.Console.Write("  |");
                 System.Console.WriteLine(Stringer.StringRepeat("     |", colsCount));
 
-                System.Console.Write("| ");
+                System.Console.Write((8 - i) + " | ");
                 for (int j = 0; j < colsCount; j++)
                 {
                     System.Console.Write(board[(i * colsCount) + j].abbrivation + " | ");
                 }
                 System.Console.WriteLine();
 
-                System.Console.Write("|");
+                System.Console.Write("  |");
                 System.Console.WriteLine(Stringer.StringRepeat("     |", colsCount));
 
-                System.Console.Write("+");
+                System.Console.Write("  +");
                 System.Console.WriteLine(Stringer.StringRepeat("-----+", colsCount));
             }
+
+            System.Console.Write("     ");
+            for (int i = 0; i < colsCount; i++)
+            {
+                System.Console.Write((char)(i + 65) + "     ");
+            }
+
+            System.Console.WriteLine();
         }
     }
 
