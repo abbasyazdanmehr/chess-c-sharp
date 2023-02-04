@@ -54,12 +54,12 @@ namespace Chess
 
             int moveCounter = 0;
 
+            List<Coordinate> possibles = new List<Coordinate>();
+
             // game loop
             while (true)
             {
-                List<Coordinate> possibles = new List<Coordinate>();
                 Board.PrintBoard();
-                Board.ClearPossibles(possibles);
 
                 System.Console.Write(current + " Choose Piece Coordinate: ");
                 string command1 = Console.ReadLine();
@@ -72,6 +72,8 @@ namespace Chess
 
                 Coordinate selectedCoordinate = Coordinate.FromString(command1);
                 System.Console.WriteLine("selected coordinate: " + selectedCoordinate);
+
+                Board.ClearPossibles(possibles);
 
                 possibles = Board.PiecePossibleMoves(selectedCoordinate);
                 Board.InsertPossibles(possibles);
@@ -183,6 +185,13 @@ namespace Chess
 
         public static Piece blankPiece = new Piece(PieceName.NONE, PieceColor.NONE);
         public static Piece possiblePiece = new Piece(PieceName.POSSIBLE, PieceColor.NONE);
+
+        public static bool whiteKingFirstMove = false;
+        public static bool blackKingFirstMove = false;
+        public static bool whiteRookFirstMove = false;
+        public static bool blackRookFirstMove = false;
+        public static bool whiteKingCastel = false;
+        public static bool blackKingCastel = false;
 
         public static bool InsertPiece(Coordinate coordinate, Piece piece)
         {
@@ -313,6 +322,23 @@ namespace Chess
         public static void DoMove(int x1, int y1, int x2, int y2)
         {
             Piece piece = GetPiece(x1, y1);
+            if (piece.abbrivation.Equals("W.K"))
+            {
+                whiteKingFirstMove = true;
+            }
+            else if (piece.abbrivation.Equals("B.K"))
+            {
+                blackKingFirstMove = true;
+            }
+            else if (piece.abbrivation.Equals("W.R"))
+            {
+                blackRookFirstMove = true;
+            }
+            else if (piece.abbrivation.Equals("B.R"))
+            {
+                blackRookFirstMove = true;
+            }
+
             InsertPiece(new Coordinate(x1, y1), blankPiece);
             InsertPiece(new Coordinate(x2, y2), piece);
         }
@@ -338,7 +364,7 @@ namespace Chess
 
         public static bool IsDestinationOk(Coordinate coordinate)
         {
-            return IsBlank(coordinate) && IsCoordinateInBoard(coordinate);
+            return IsCoordinateInBoard(coordinate) && IsBlank(coordinate);
         }
 
         public static bool IsDestinationOk(int inX, int inY)
@@ -414,7 +440,13 @@ namespace Chess
         public static List<Coordinate> WhitePawnPossibleMoves(Coordinate coordinate)
         {
             List<Coordinate> possibles = new List<Coordinate>();
-
+            System.Console.WriteLine(
+                coordinate.y
+                    + " $ "
+                    + IsBlank(coordinate.x, coordinate.y - 1)
+                    + " $ "
+                    + IsBlank(coordinate.x, coordinate.y - 2)
+            );
             if (
                 coordinate.y == 6
                 && IsBlank(coordinate.x, coordinate.y - 1)
@@ -423,7 +455,8 @@ namespace Chess
             {
                 possibles.Add(new Coordinate(coordinate.x, coordinate.y - 2));
             }
-            else if (IsDestinationOk(coordinate.x, coordinate.y - 1))
+
+            if (IsDestinationOk(coordinate.x, coordinate.y - 1))
             {
                 possibles.Add(new Coordinate(coordinate.x, coordinate.y - 1));
             }
@@ -618,7 +651,10 @@ namespace Chess
                     break;
                 }
 
-                possibles.Add(new Coordinate(current.x, current.y));
+                if (IsDestinationOk(current))
+                {
+                    possibles.Add(new Coordinate(current.x, current.y));
+                }
             }
 
             current.x = coordinate.x;
@@ -638,7 +674,10 @@ namespace Chess
                     break;
                 }
 
-                possibles.Add(new Coordinate(current.x, current.y));
+                if (IsDestinationOk(current))
+                {
+                    possibles.Add(new Coordinate(current.x, current.y));
+                }
             }
 
             current.x = coordinate.x;
@@ -658,7 +697,10 @@ namespace Chess
                     break;
                 }
 
-                possibles.Add(new Coordinate(current.x, current.y));
+                if (IsDestinationOk(current))
+                {
+                    possibles.Add(new Coordinate(current.x, current.y));
+                }
             }
 
             current.x = coordinate.x;
@@ -678,7 +720,10 @@ namespace Chess
                     break;
                 }
 
-                possibles.Add(new Coordinate(current.x, current.y));
+                if (IsDestinationOk(current))
+                {
+                    possibles.Add(new Coordinate(current.x, current.y));
+                }
             }
 
             return possibles;
@@ -701,35 +746,59 @@ namespace Chess
 
             current.x = coordinate.x + 1;
             current.y = coordinate.y;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x + 1;
             current.y = coordinate.y + 1;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y + 1;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y + 1;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y - 1;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y - 1;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             current.x = coordinate.x + 1;
             current.y = coordinate.y - 1;
-            possibles.Add(new Coordinate(current.x, current.y));
+            if (IsDestinationOk(current))
+            {
+                possibles.Add(new Coordinate(current.x, current.y));
+            }
 
             return possibles;
         }
@@ -740,7 +809,22 @@ namespace Chess
             possibles.AddRange(KingUsualPossibleMoves(coordinate));
 
             // white castle
+            possibles.AddRange(Castel());
 
+            return possibles;
+        }
+
+        public static List<Coordinate> WhiteKingPossibleCastel()
+        {
+            List<Coordinate> possibles = new List<Coordinate>();
+            if (!whiteKingCastel && !whiteKingFirstMove && !whiteRookFirstMove)
+            {
+                if (IsBlank(Coordinate.FromString("f1")) && IsBlank(Coordinate.FromString("g1")))
+                {
+                    possibles.Add(Coordinate.FromString("g1"));
+                }
+                else { }
+            }
 
             return possibles;
         }
@@ -1186,6 +1270,18 @@ namespace MyUtil
                 outp += inp;
             }
             return outp;
+        }
+    }
+
+    public class Lister
+    {
+        public static void PrintCordinateList(List<Coordinate> list)
+        {
+            foreach (var l in list)
+            {
+                System.Console.Write(l + " $ ");
+            }
+            System.Console.WriteLine();
         }
     }
 }
