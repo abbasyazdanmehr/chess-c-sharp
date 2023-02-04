@@ -1,0 +1,10 @@
+
+
+
+-   insert piece coordinate is bad for newing
+-   king not be checked before moves
+-   current.x = coordinate.x;
+            current.y = coordinate.y;
+
+-   Piece currentPiece = GetPiece(current);
+-   possibles newing.
