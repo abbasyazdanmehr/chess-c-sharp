@@ -61,7 +61,7 @@ namespace Chess
             {
                 Board.PrintBoard();
 
-                System.Console.Write(current + " Choose Piece Coordinate: ");
+                System.Console.Write("Choose Start Coordinate: ");
                 string command1 = Console.ReadLine();
 
                 if (command1.Equals("exit"))
@@ -70,13 +70,29 @@ namespace Chess
                     break;
                 }
 
-                Coordinate selectedCoordinate = Coordinate.FromString(command1);
-                System.Console.WriteLine("selected coordinate: " + selectedCoordinate);
+                Coordinate startCoordinate = Coordinate.FromString(command1);
+                System.Console.WriteLine("start coordinate: " + startCoordinate);
 
                 Board.ClearPossibles(possibles);
 
-                possibles = Board.PiecePossibleMoves(selectedCoordinate);
+                // showing possible moves
+                possibles = Board.PiecePossibleMoves(startCoordinate);
                 Board.InsertPossibles(possibles);
+
+                Board.PrintBoard();
+                System.Console.Write("Choose Destination Coordinate : ");
+
+                string command2 = Console.ReadLine();
+                Coordinate destinationCoordinate = Coordinate.FromString(command2);
+
+                Coordinate coordinateInPossibles = Coordinate.GetCoordinateInList(destinationCoordinate, possibles);
+                if (coordinateInPossibles != Board.notFoundCoordinate)
+                {
+                    Board.DoMove(startCoordinate, destinationCoordinate);
+                    possibles.Remove(coordinateInPossibles);
+                }
+
+                Board.ClearPossibles(possibles);
             }
 
             return 0;
@@ -188,10 +204,9 @@ namespace Chess
 
         public static bool whiteKingFirstMove = false;
         public static bool blackKingFirstMove = false;
+
         public static bool whiteRookFirstMove = false;
         public static bool blackRookFirstMove = false;
-        public static bool whiteKingCastel = false;
-        public static bool blackKingCastel = false;
 
         public static bool InsertPiece(Coordinate coordinate, Piece piece)
         {
@@ -322,6 +337,39 @@ namespace Chess
         public static void DoMove(int x1, int y1, int x2, int y2)
         {
             Piece piece = GetPiece(x1, y1);
+
+            // ToDo: these conditions execute in every move :/
+            if (piece.abbrivation.Equals("W.K"))
+            {
+                whiteKingFirstMove = true;
+            }
+            else if (piece.abbrivation.Equals("B.K"))
+            {
+                blackKingFirstMove = true;
+            }
+            else if (piece.abbrivation.Equals("W.R"))
+            {
+                blackRookFirstMove = true;
+            }
+            else if (piece.abbrivation.Equals("B.R"))
+            {
+                blackRookFirstMove = true;
+            }
+
+            InsertPiece(new Coordinate(x1, y1), blankPiece);
+            InsertPiece(new Coordinate(x2, y2), piece);
+        }
+
+        public static void DoMove(Coordinate coordinate1, Coordinate coordinate2)
+        {
+            int x1 = coordinate1.x;
+            int y1 = coordinate1.y;
+            int x2 = coordinate2.x;
+            int y2 = coordinate2.y;
+
+            Piece piece = GetPiece(x1, y1);
+
+            // ToDo: these conditions execute in every move :/
             if (piece.abbrivation.Equals("W.K"))
             {
                 whiteKingFirstMove = true;
@@ -385,6 +433,70 @@ namespace Chess
             return true;
         }
 
+        public static bool IsCheckOKForSmallCastle(PieceColor color)
+        {
+            string strColor;
+            if (color == PieceColor.WHITE)
+                strColor = "W";
+            else
+                strColor = "B";
+
+            Coordinate kingCoordinate = GetCoordinate(strColor + ".K");
+            Piece king = GetPiece(kingCoordinate);
+
+            InsertPiece(kingCoordinate, blankPiece);
+            InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, king);
+            if (IsChecked(king.color))
+            {
+                InsertPiece(kingCoordinate, king);
+                return false;
+            }
+
+            InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, blankPiece);
+            InsertPiece(kingCoordinate.x + 2, kingCoordinate.y, king);
+
+            if (IsChecked(king.color))
+            {
+                InsertPiece(kingCoordinate, king);
+                return false;
+            }
+
+            InsertPiece(kingCoordinate, king);
+            return true;
+        }
+
+        public static bool IsCheckOKForBigCastle(PieceColor color)
+        {
+            string strColor;
+            if (color == PieceColor.WHITE)
+                strColor = "W";
+            else
+                strColor = "B";
+
+            Coordinate kingCoordinate = GetCoordinate(strColor + ".K");
+            Piece king = GetPiece(kingCoordinate);
+
+            InsertPiece(kingCoordinate, blankPiece);
+            InsertPiece(kingCoordinate.x - 1, kingCoordinate.y, king);
+            if (IsChecked(king.color))
+            {
+                InsertPiece(kingCoordinate, king);
+                return false;
+            }
+
+            InsertPiece(kingCoordinate.x - 1, kingCoordinate.y, blankPiece);
+            InsertPiece(kingCoordinate.x - 2, kingCoordinate.y, king);
+
+            if (IsChecked(king.color))
+            {
+                InsertPiece(kingCoordinate, king);
+                return false;
+            }
+
+            InsertPiece(kingCoordinate, king);
+            return true;
+        }
+
         public static List<Coordinate> PiecePossibleMoves(Coordinate coordinate)
         {
             Piece piece = GetPiece(coordinate);
@@ -440,13 +552,7 @@ namespace Chess
         public static List<Coordinate> WhitePawnPossibleMoves(Coordinate coordinate)
         {
             List<Coordinate> possibles = new List<Coordinate>();
-            System.Console.WriteLine(
-                coordinate.y
-                    + " $ "
-                    + IsBlank(coordinate.x, coordinate.y - 1)
-                    + " $ "
-                    + IsBlank(coordinate.x, coordinate.y - 2)
-            );
+
             if (
                 coordinate.y == 6
                 && IsBlank(coordinate.x, coordinate.y - 1)
@@ -475,7 +581,8 @@ namespace Chess
             {
                 possibles.Add(new Coordinate(coordinate.x, coordinate.y + 2));
             }
-            else if (IsDestinationOk(coordinate.x, coordinate.y + 1))
+
+            if (IsDestinationOk(coordinate.x, coordinate.y + 1))
             {
                 possibles.Add(new Coordinate(coordinate.x, coordinate.y + 1));
             }
@@ -809,21 +916,33 @@ namespace Chess
             possibles.AddRange(KingUsualPossibleMoves(coordinate));
 
             // white castle
-            possibles.AddRange(Castel());
+            possibles.AddRange(WhiteKingPossibleCastle());
 
             return possibles;
         }
 
-        public static List<Coordinate> WhiteKingPossibleCastel()
+        public static List<Coordinate> WhiteKingPossibleCastle()
         {
             List<Coordinate> possibles = new List<Coordinate>();
-            if (!whiteKingCastel && !whiteKingFirstMove && !whiteRookFirstMove)
+            if (!whiteKingFirstMove && !whiteRookFirstMove && IsChecked(PieceColor.WHITE))
             {
-                if (IsBlank(Coordinate.FromString("f1")) && IsBlank(Coordinate.FromString("g1")))
+                if (
+                    IsBlank(Coordinate.FromString("f1"))
+                    && IsBlank(Coordinate.FromString("g1"))
+                    && IsCheckOKForSmallCastle(PieceColor.WHITE)
+                )
                 {
                     possibles.Add(Coordinate.FromString("g1"));
                 }
-                else { }
+
+                if (
+                    IsBlank(Coordinate.FromString("c1"))
+                    && IsBlank(Coordinate.FromString("d1"))
+                    && IsCheckOKForBigCastle(PieceColor.WHITE)
+                )
+                {
+                    possibles.Add(Coordinate.FromString("c1"));
+                }
             }
 
             return possibles;
@@ -835,7 +954,34 @@ namespace Chess
             possibles.AddRange(KingUsualPossibleMoves(coordinate));
 
             // Black castle
+            possibles.AddRange(BlackKingPossibleCastle());
 
+            return possibles;
+        }
+
+        public static List<Coordinate> BlackKingPossibleCastle()
+        {
+            List<Coordinate> possibles = new List<Coordinate>();
+            if (!blackKingFirstMove && !blackRookFirstMove && !IsChecked(PieceColor.BLACK))
+            {
+                if (
+                    IsBlank(Coordinate.FromString("f8"))
+                    && IsBlank(Coordinate.FromString("g8"))
+                    && IsCheckOKForSmallCastle(PieceColor.BLACK)
+                )
+                {
+                    possibles.Add(Coordinate.FromString("g8"));
+                }
+
+                if (
+                    IsBlank(Coordinate.FromString("c8"))
+                    && IsBlank(Coordinate.FromString("d8"))
+                    && IsCheckOKForBigCastle(PieceColor.BLACK)
+                )
+                {
+                    possibles.Add(Coordinate.FromString("c8"));
+                }
+            }
 
             return possibles;
         }
@@ -1243,6 +1389,23 @@ namespace Chess
         {
             coordinate1.x = coordinate2.x;
             coordinate1.y = coordinate2.y;
+        }
+
+        public static Coordinate GetCoordinateInList(Coordinate coordinate, List<Coordinate> coordinates)
+        {
+            foreach (var c in coordinates)
+            {
+                if (c.isEqual(coordinate))
+                {
+                    return c;
+                }
+            }
+            return Board.notFoundCoordinate;
+        }
+
+        public bool isEqual(Coordinate coordinate)
+        {
+            return x == coordinate.x && y == coordinate.y;
         }
 
         public override string ToString()

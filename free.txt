@@ -1,7 +1,4 @@
-Pieces:
-    -   pawn
-    -   king
-    -   queen
-    -   knight
-    -   bishop
-    -   rook
+
+Code triek:
+    -   print line by line debug is usually very efficient
+    -   reviewing logic is always good

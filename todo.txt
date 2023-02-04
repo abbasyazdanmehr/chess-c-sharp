@@ -7,4 +7,3 @@
             current.y = coordinate.y;
 
 -   Piece currentPiece = GetPiece(current);
--   possibles newing.
