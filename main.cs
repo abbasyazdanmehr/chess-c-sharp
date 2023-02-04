@@ -41,12 +41,11 @@ namespace Chess
 
     public class Game
     {
-        static List<Coordinate> possibles = new List<Coordinate>();
-
         public static int Start()
         {
             System.Console.WriteLine("Game Started ...");
             Board.InitialBoard();
+            // Board.InitialBoardTest();
 
             Player player1 = new Player("Player 1", PieceColor.WHITE);
             Player player2 = new Player("Player 2", PieceColor.BLACK);
@@ -59,8 +58,9 @@ namespace Chess
             while (true)
             {
                 Board.PrintBoard();
+                System.Console.WriteLine(Board.IsChecked(PieceColor.WHITE));
 
-                ClearPossibles();
+                Board.ClearPossibles();
 
                 System.Console.Write(current + " Choose Piece Coordinate: ");
                 string command1 = Console.ReadLine();
@@ -77,92 +77,12 @@ namespace Chess
                 Piece selectedPiece = Board.GetPiece(selectedCoordinate);
                 System.Console.WriteLine(selectedPiece);
 
-                PiecePossibleMoves(selectedPiece, selectedCoordinate);
-                InsertPossibles();
+                Board.PiecePossibleMoves(selectedPiece, selectedCoordinate);
+                Board.InsertPossibles();
             }
 
             return 0;
         }
-
-        public static void InsertPossibles()
-        {
-            foreach (var possible in possibles)
-            {
-                Board.InsertPiece(possible, Board.possiblePiece);
-            }
-        }
-
-        public static void ClearPossibles()
-        {
-            foreach (var possible in possibles)
-            {
-                Board.InsertPiece(possible, Board.blankPiece);
-            }
-            possibles.Clear();
-        }
-
-        public static void PiecePossibleMoves(Piece piece, Coordinate coordinate)
-        {
-            // switch case is bullshit in syntax (but better at performance)
-            if (piece.name == PieceName.PAWN)
-            {
-                PAWNPassibleMoves(coordinate, piece.color);
-            }
-            // else if (PieceName == PieceName.KING)
-            // {
-            //     KINGPassibleMoves(coordinate);
-            // }
-            // else if (PieceName == PieceName.QUEEN)
-            // {
-            //     QUEENPassibleMoves(coordinate);
-            // }
-            // else if (PieceName == PieceName.KNIGHT)
-            // {
-            //     KNIGHTPassibleMoves(coordinate);
-            // }
-            // else if (PieceName == PieceName.BISHOP)
-            // {
-            //     BISHOPPassibleMoves(coordinate);
-            // }
-            // else if (PieceName == PieceName.ROOK)
-            // {
-            //     ROOKPassibleMoves(coordinate);
-            // }
-            else
-            {
-                throw new Exception("$ AY: Wrong Piece in PiecePossibleMoves");
-            }
-        }
-
-        public static void PAWNPassibleMoves(Coordinate coordinate, PieceColor color)
-        {
-            if (color == PieceColor.WHITE)
-            {
-                if (coordinate.y == 6)
-                {
-                    possibles.Add(new Coordinate(coordinate.x, coordinate.y - 2));
-                }
-                possibles.Add(new Coordinate(coordinate.x, coordinate.y - 1));
-            }
-            else if (color == PieceColor.BLACK)
-            {
-                if (coordinate.y == 1)
-                {
-                    possibles.Add(new Coordinate(coordinate.x, coordinate.y + 2));
-                }
-                possibles.Add(new Coordinate(coordinate.x, coordinate.y + 1));
-            }
-        }
-
-        // public List<Coordinate> KINGPassibleMoves(Coordinate coordinate) { }
-
-        // public List<Coordinate> QUEENPassibleMoves(Coordinate coordinate) { }
-
-        // public List<Coordinate> KNIGHTPassibleMoves(Coordinate coordinate) { }
-
-        // public List<Coordinate> BISHOPPassibleMoves(Coordinate coordinate) { }
-
-        // public List<Coordinate> ROOKPassibleMoves(Coordinate coordinate) { }
 
         public static void EndOfGame()
         {
@@ -263,6 +183,10 @@ namespace Chess
         public static int rowsCount = 8;
         public static int colsCount = 8;
 
+        public static Coordinate notFoundCoordinate = new Coordinate(-1, -1);
+
+        static List<Coordinate> possibles = new List<Coordinate>();
+
         public static Piece blankPiece = new Piece(PieceName.NONE, PieceColor.NONE);
         public static Piece possiblePiece = new Piece(PieceName.POSSIBLE, PieceColor.NONE);
 
@@ -275,6 +199,11 @@ namespace Chess
         public static Piece GetPiece(Coordinate coordinate)
         {
             return board[(coordinate.y * colsCount) + coordinate.x];
+        }
+
+        public static Piece GetPiece(int inX, int inY)
+        {
+            return board[(inY * colsCount) + inX];
         }
 
         public static bool InitialBoard()
@@ -325,6 +254,21 @@ namespace Chess
             return true;
         }
 
+        public static void InitialBoardTest()
+        {
+            // set blanks squares
+            for (int i = 0; i < rowsCount; i++)
+            {
+                for (int j = 0; j < colsCount; j++)
+                {
+                    InsertPiece(new Coordinate(j, i), blankPiece);
+                }
+            }
+            InsertPiece(new Coordinate(3, 7), new Piece(PieceName.KING, PieceColor.WHITE));
+            InsertPiece(new Coordinate(3, 2), new Piece(PieceName.QUEEN, PieceColor.BLACK));
+            InsertPiece(new Coordinate(3, 3), new Piece(PieceName.KNIGHT, PieceColor.BLACK));
+        }
+
         public static void PrintBoard()
         {
             System.Console.Write("  +");
@@ -357,6 +301,768 @@ namespace Chess
 
             System.Console.WriteLine();
         }
+
+        public static void InsertPossibles()
+        {
+            foreach (var possible in possibles)
+            {
+                Board.InsertPiece(possible, Board.possiblePiece);
+            }
+        }
+
+        public static void DoMove(int x1, int y1, int x2, int y2)
+        {
+            Piece piece = GetPiece(x1, y1);
+            InsertPiece(new Coordinate(x1, y1), blankPiece);
+            InsertPiece(new Coordinate(x2, y2), piece);
+        }
+
+        public static void ClearPossibles()
+        {
+            foreach (var possible in possibles)
+            {
+                InsertPiece(possible, blankPiece);
+            }
+            possibles.Clear();
+        }
+
+        public static void AddPossible(int x1, int y1, int x2, int y2)
+        {
+            if (IsPossibleMove(x1, y1, x2, y2))
+                possibles.Add(new Coordinate(x2, y2));
+        }
+
+        public static bool IsCheckOK(int x1, int y1, int x2, int y2)
+        {
+            DoMove(x1, y1, x2, y2);
+            if (IsChecked(GetPiece(x2, y2).color))
+            {
+                DoMove(x2, y2, x1, y1);
+                return false;
+            }
+            DoMove(x2, y2, x1, y1);
+            return true;
+        }
+
+        public static bool PiecePossibleMoves(Coordinate coordinate)
+        {
+            // switch case is bullshit in syntax (but better at performance)
+            Piece piece = GetPiece(coordinate);
+            if (piece.name == PieceName.KNIGHT)
+            {
+                KnightPossibleMoves(coordinate, piece.color);
+                return true;
+            }
+            else if (piece.name == PieceName.BISHOP)
+            {
+                BishopPossibleMoves(coordinate, piece.color);
+                return true;
+            }
+            else if (piece.name == PieceName.ROOK)
+            {
+                RookPossibleMoves(coordinate);
+                return true;
+            }
+            else if (piece.name == PieceName.QUEEN)
+            {
+                QueenPossibleMoves(coordinate);
+                return true;
+            }
+
+            if (piece.color == PieceColor.WHITE)
+            {
+                if (piece.name == PieceName.PAWN)
+                {
+                    WhitePawnPossibleMoves(coordinate);
+                }
+                else if (piece.name == PieceName.KING)
+                {
+                    WhiteKingPossibleMoves(coordinate);
+                }
+            }
+            else if (piece.color == PieceColor.BLACK)
+            {
+                if (piece.name == PieceName.PAWN)
+                {
+                    BlackPawnPossibleMoves(coordinate);
+                }
+                else if (piece.name == PieceName.KING)
+                {
+                    BlackKingPossibleMoves(coordinate);
+                }
+            }
+            else
+            {
+                throw new Exception("$ AY: Wrong Piece in PiecePossibleMoves");
+            }
+
+            return true;
+        }
+
+        public static void WhitePawnPossibleMoves(Coordinate coordinate)
+        {
+            if (coordinate.y == 6 && Board.GetPiece(coordinate.x, coordinate.y - 1) == blankPiece)
+            {
+                AddPossible(coordinate.x, coordinate.y, coordinate.x, coordinate.y - 2);
+            }
+            AddPossible(coordinate.x, coordinate.y, coordinate.x, coordinate.y - 1);
+        }
+
+        public static void BlackPawnPossibleMoves(Coordinate coordinate)
+        {
+            if (coordinate.y == 1 && Board.GetPiece(coordinate.x, coordinate.y + 1) == blankPiece)
+            {
+                AddPossible(coordinate.x, coordinate.y, coordinate.x, coordinate.y + 2);
+            }
+            AddPossible(coordinate.x, coordinate.y, coordinate.x, coordinate.y + 1);
+        }
+
+        public static void KnightPossibleMoves(Coordinate coordinate, PieceColor color)
+        {
+            Coordinate current = new Coordinate(0, 0);
+
+            current.x = coordinate.x + 1;
+            current.y = coordinate.y + 2;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x + 2;
+            current.y = coordinate.y + 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 1;
+            current.y = coordinate.y + 2;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 2;
+            current.y = coordinate.y + 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x + 1;
+            current.y = coordinate.y - 2;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x + 2;
+            current.y = coordinate.y - 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 1;
+            current.y = coordinate.y - 2;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 2;
+            current.y = coordinate.y - 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+        }
+
+        public static void BishopPossibleMoves(Coordinate coordinate, PieceColor color)
+        {
+            Coordinate current = new Coordinate(0, 0);
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.x += 1;
+                current.y += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.x -= 1;
+                current.y += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.x += 1;
+                current.y -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.x -= 1;
+                current.y -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+        }
+
+        public static void RookPossibleMoves(Coordinate coordinate)
+        {
+            Coordinate current = new Coordinate(0, 0);
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.x += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.y += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.x -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+
+            current.x = coordinate.x;
+            current.y = coordinate.y;
+            while (true)
+            {
+                current.y -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+
+                AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+            }
+        }
+
+        public static void QueenPossibleMoves(Coordinate coordinate)
+        {
+            BishopPossibleMoves(coordinate, PieceColor.WHITE);
+            RookPossibleMoves(coordinate);
+        }
+
+        public static void KingUsualPossibleMoves(Coordinate coordinate)
+        {
+            Coordinate current = new Coordinate(0, 0);
+
+            current.x = coordinate.x + 1;
+            current.y = coordinate.y;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x + 1;
+            current.y = coordinate.y + 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x;
+            current.y = coordinate.y + 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 1;
+            current.y = coordinate.y + 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 1;
+            current.y = coordinate.y;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x - 1;
+            current.y = coordinate.y - 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x;
+            current.y = coordinate.y - 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+
+            current.x = coordinate.x + 1;
+            current.y = coordinate.y - 1;
+            AddPossible(coordinate.x, coordinate.y, current.x, current.y);
+        }
+
+        public static void WhiteKingPossibleMoves(Coordinate coordinate)
+        {
+            KingUsualPossibleMoves(coordinate);
+
+            // white castle
+        }
+
+        public static void BlackKingPossibleMoves(Coordinate coordinate)
+        {
+            KingUsualPossibleMoves(coordinate);
+
+            // Black castle
+        }
+
+        public static bool IsPossibleMove(int x1, int y1, int x2, int y2)
+        {
+            return IsCoordinateInBoard(x2, y2)
+                && IsEmptySquare(x2, y2)
+                && IsCheckOK(x1, y1, x2, y2);
+        }
+
+        public static bool IsEmptySquare(int inX, int inY)
+        {
+            return GetPiece(inX, inY) == blankPiece;
+        }
+
+        public static bool IsChecked(PieceColor color)
+        {
+            string friendColor;
+            string enemyColor;
+            if (color == PieceColor.WHITE)
+            {
+                friendColor = "W";
+                enemyColor = "B";
+            }
+            else
+            {
+                friendColor = "B";
+                enemyColor = "W";
+            }
+
+            Coordinate kingCoordinate = GetCoordinate(friendColor + ".K");
+
+            Coordinate current = kingCoordinate.Copy();
+
+            // check pawns
+            current.x = kingCoordinate.x + 1;
+            current.y = kingCoordinate.y + 1;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".P")
+            )
+                return true;
+
+            current.x = kingCoordinate.x - 1;
+            current.y = kingCoordinate.y + 1;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".P")
+            )
+                return true;
+
+            // check knights shape
+            current.x = kingCoordinate.x + 1;
+            current.y = kingCoordinate.y + 2;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x + 2;
+            current.y = kingCoordinate.y + 1;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x - 1;
+            current.y = kingCoordinate.y + 2;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x - 2;
+            current.y = kingCoordinate.y + 1;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x + 1;
+            current.y = kingCoordinate.y - 2;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x + 2;
+            current.y = kingCoordinate.y - 1;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x - 1;
+            current.y = kingCoordinate.y - 2;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            current.x = kingCoordinate.x - 2;
+            current.y = kingCoordinate.y - 1;
+            if (
+                IsCoordinateInBoard(current)
+                && GetPiece(current).abbrivation.Equals(enemyColor + ".N")
+            )
+            {
+                return true;
+            }
+
+            // check diagonals
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.x += 1;
+                current.y += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".B"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.x -= 1;
+                current.y += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".B"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.x += 1;
+                current.y -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".B"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.x -= 1;
+                current.y -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".B"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            // check row and column
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.x += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".R"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.y += 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".R"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.x -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".R"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            current.x = kingCoordinate.x;
+            current.y = kingCoordinate.y;
+            while (true)
+            {
+                current.y -= 1;
+                if (!IsCoordinateInBoard(current.x, current.y))
+                {
+                    break;
+                }
+
+                Piece currentPiece = GetPiece(current);
+
+                if (
+                    currentPiece.abbrivation == enemyColor + ".Q"
+                    || currentPiece.abbrivation == enemyColor + ".R"
+                )
+                {
+                    return true;
+                }
+
+                if (currentPiece.abbrivation != blankPiece.abbrivation)
+                {
+                    break;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IsCoordinateInBoard(int inX, int inY)
+        {
+            if (inX < 0 || inY < 0 || inX >= colsCount || inY >= rowsCount)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public static bool IsCoordinateInBoard(Coordinate coordinate)
+        {
+            int inX = coordinate.x;
+            int inY = coordinate.y;
+            if (inX < 0 || inY < 0 || inX >= colsCount || inY >= rowsCount)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public static Coordinate GetCoordinate(string abbrivation)
+        {
+            for (int i = 0; i < rowsCount; i++)
+            {
+                for (int j = 0; j < colsCount; j++)
+                {
+                    if (GetPiece(i, j).abbrivation == abbrivation)
+                    {
+                        return new Coordinate(i, j);
+                    }
+                }
+            }
+            return notFoundCoordinate;
+        }
     }
 
     public class Coordinate
@@ -378,10 +1084,21 @@ namespace Chess
             return coordinate;
         }
 
+        public Coordinate Copy()
+        {
+            return new Coordinate(x, y);
+        }
+
         public override string ToString()
         {
             return x + ", " + y;
         }
+    }
+
+    public class Move
+    {
+        public Coordinate from;
+        public Coordinate to;
     }
 }
 

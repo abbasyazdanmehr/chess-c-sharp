@@ -1,0 +1,29 @@
+public static void InitialBoardTest()
+        {
+            // set blanks squares
+            for (int i = 0; i < rowsCount; i++)
+            {
+                for (int j = 0; j < colsCount; j++)
+                {
+                    InsertPiece(new Coordinate(j, i), blankPiece);
+                }
+            }
+            InsertPiece(new Coordinate(3, 7), new Piece(PieceName.KING, PieceColor.WHITE));
+            InsertPiece(new Coordinate(2, 7), new Piece(PieceName.QUEEN, PieceColor.BLACK));
+        }
+
+
+public static void InitialBoardTest()
+        {
+            // set blanks squares
+            for (int i = 0; i < rowsCount; i++)
+            {
+                for (int j = 0; j < colsCount; j++)
+                {
+                    InsertPiece(new Coordinate(j, i), blankPiece);
+                }
+            }
+            InsertPiece(new Coordinate(3, 7), new Piece(PieceName.KING, PieceColor.WHITE));
+            InsertPiece(new Coordinate(3, 2), new Piece(PieceName.QUEEN, PieceColor.BLACK));
+            InsertPiece(new Coordinate(3, 3), new Piece(PieceName.KNIGHT, PieceColor.BLACK));
+        }
