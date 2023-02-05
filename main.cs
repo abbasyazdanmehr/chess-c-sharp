@@ -50,7 +50,7 @@ namespace Chess
             Player player1 = new Player("Player 1", PieceColor.WHITE);
             Player player2 = new Player("Player 2", PieceColor.BLACK);
 
-            Player current = player1;
+            Player currentPlayer = player1;
 
             int moveCounter = 0;
 
@@ -59,41 +59,73 @@ namespace Chess
             // game loop
             while (true)
             {
-                Board.PrintBoard();
-
-                System.Console.Write("Choose Start Coordinate: ");
-                string command1 = Console.ReadLine();
-
-                if (command1.Equals("exit"))
+                if (moveCounter % 2 == 0)
                 {
-                    EndOfGame();
-                    break;
+                    currentPlayer = player1;
                 }
-
-                Coordinate startCoordinate = Coordinate.FromString(command1);
-                System.Console.WriteLine("start coordinate: " + startCoordinate);
+                else
+                {
+                    currentPlayer = player2;
+                }
 
                 Board.ClearPossibles(possibles);
 
+                Board.PrintBoard();
+
+                Coordinate startCoordinate;
+                while (true)
+                {
+                    System.Console.Write("Choose Start Coordinate: ");
+                    string command1 = Console.ReadLine();
+
+                    if (command1.Equals("exit"))
+                    {
+                        EndOfGame();
+                    }
+
+                    startCoordinate = Coordinate.FromString(command1);
+
+                    if (
+                        startCoordinate != (Board.notFoundCoordinate)
+                        && Board.GetPiece(startCoordinate).color == currentPlayer.color
+                    )
+                    {
+                        possibles = Board.PiecePossibleMoves(startCoordinate);
+                        if (possibles.Count != 0)
+                            break;
+                    }
+                }
+                System.Console.WriteLine("start coordinate: " + startCoordinate);
+
                 // showing possible moves
-                possibles = Board.PiecePossibleMoves(startCoordinate);
                 Board.InsertPossibles(possibles);
 
                 Board.PrintBoard();
-                System.Console.Write("Choose Destination Coordinate : ");
 
-                string command2 = Console.ReadLine();
-                Coordinate destinationCoordinate = Coordinate.FromString(command2);
-
-                Coordinate coordinateInPossibles = Coordinate.GetCoordinateInList(
-                    destinationCoordinate,
-                    possibles
-                );
-                Board.ClearPossibles(possibles);
-                if (coordinateInPossibles != Board.notFoundCoordinate)
+                // move is obligation after toching piece (touch-move rule in chess)
+                Coordinate destinationCoordinate;
+                while (true)
                 {
-                    Board.DoMove(startCoordinate, destinationCoordinate);
+                    System.Console.Write("Choose Destination Coordinate : ");
+                    string command2 = Console.ReadLine();
+                    destinationCoordinate = Coordinate.FromString(command2);
+
+                    Coordinate coordinateInPossibles = Coordinate.GetCoordinateInList(
+                        destinationCoordinate,
+                        possibles
+                    );
+
+                    if (coordinateInPossibles != Board.notFoundCoordinate)
+                    {
+                        break;
+                    }
                 }
+
+                Board.ClearPossibles(possibles);
+
+                Board.DoMove(startCoordinate, destinationCoordinate);
+
+                moveCounter += 1;
             }
 
             return 0;
@@ -102,13 +134,14 @@ namespace Chess
         public static void EndOfGame()
         {
             System.Console.WriteLine("GoodBy!");
+            System.Environment.Exit(0);
         }
     }
 
     class Player
     {
         string name;
-        PieceColor color;
+        public PieceColor color;
         int score;
 
         public Player(string inName, PieceColor inColor)
@@ -396,6 +429,16 @@ namespace Chess
         public static bool IsBlank(int inX, int inY)
         {
             return GetPiece(inX, inY) == blankPiece;
+        }
+
+        public static bool IsColorBlank(Coordinate coordinate, PieceColor color)
+        {
+            return (GetPiece(coordinate) == blankPiece || GetPiece(coordinate).color == color);
+        }
+
+        public static bool IsColorBlank(int inX, int inY, PieceColor color)
+        {
+            return (GetPiece(inX, inY) == blankPiece || GetPiece(inX, inY).color == color);
         }
 
         public static bool IsDestinationOk(Coordinate coordinate)
@@ -1363,6 +1406,21 @@ namespace Chess
 
         public static Coordinate FromString(string inp)
         {
+            if (inp.Length != 2)
+            {
+                return Board.notFoundCoordinate;
+            }
+
+            if (
+                (int)inp.Substring(0, 1).ToUpper().ToCharArray()[0] < (int)'A'
+                || (int)inp.Substring(0, 1).ToUpper().ToCharArray()[0] > (int)'H'
+                || (int)inp.Substring(1, 1).ToUpper().ToCharArray()[0] < (int)'1'
+                || (int)inp.Substring(1, 1).ToUpper().ToCharArray()[0] > (int)'8'
+            )
+            {
+                return Board.notFoundCoordinate;
+            }
+
             Coordinate coordinate = new Coordinate(0, 0);
             coordinate.x = (int)inp.Substring(0, 1).ToUpper().ToCharArray()[0] - 65;
             coordinate.y = Board.rowsCount - int.Parse(inp.Substring(1, 1));
