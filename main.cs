@@ -85,14 +85,15 @@ namespace Chess
                 string command2 = Console.ReadLine();
                 Coordinate destinationCoordinate = Coordinate.FromString(command2);
 
-                Coordinate coordinateInPossibles = Coordinate.GetCoordinateInList(destinationCoordinate, possibles);
+                Coordinate coordinateInPossibles = Coordinate.GetCoordinateInList(
+                    destinationCoordinate,
+                    possibles
+                );
+                Board.ClearPossibles(possibles);
                 if (coordinateInPossibles != Board.notFoundCoordinate)
                 {
                     Board.DoMove(startCoordinate, destinationCoordinate);
-                    possibles.Remove(coordinateInPossibles);
                 }
-
-                Board.ClearPossibles(possibles);
             }
 
             return 0;
@@ -234,19 +235,19 @@ namespace Chess
         {
             // set black pieces
             // first row
-            InsertPiece(new Coordinate(0, 0), new Piece(PieceName.ROOK, PieceColor.BLACK));
-            InsertPiece(new Coordinate(1, 0), new Piece(PieceName.KNIGHT, PieceColor.BLACK));
-            InsertPiece(new Coordinate(2, 0), new Piece(PieceName.BISHOP, PieceColor.BLACK));
-            InsertPiece(new Coordinate(3, 0), new Piece(PieceName.QUEEN, PieceColor.BLACK));
-            InsertPiece(new Coordinate(4, 0), new Piece(PieceName.KING, PieceColor.BLACK));
-            InsertPiece(new Coordinate(5, 0), new Piece(PieceName.BISHOP, PieceColor.BLACK));
-            InsertPiece(new Coordinate(6, 0), new Piece(PieceName.KNIGHT, PieceColor.BLACK));
-            InsertPiece(new Coordinate(7, 0), new Piece(PieceName.ROOK, PieceColor.BLACK));
+            InsertPiece(0, 0, new Piece(PieceName.ROOK, PieceColor.BLACK));
+            InsertPiece(1, 0, new Piece(PieceName.KNIGHT, PieceColor.BLACK));
+            InsertPiece(2, 0, new Piece(PieceName.BISHOP, PieceColor.BLACK));
+            InsertPiece(3, 0, new Piece(PieceName.QUEEN, PieceColor.BLACK));
+            InsertPiece(4, 0, new Piece(PieceName.KING, PieceColor.BLACK));
+            InsertPiece(5, 0, new Piece(PieceName.BISHOP, PieceColor.BLACK));
+            InsertPiece(6, 0, new Piece(PieceName.KNIGHT, PieceColor.BLACK));
+            InsertPiece(7, 0, new Piece(PieceName.ROOK, PieceColor.BLACK));
 
             // second row
             for (int i = 0; i < colsCount; i++)
             {
-                InsertPiece(new Coordinate(i, 1), new Piece(PieceName.PAWN, PieceColor.BLACK));
+                InsertPiece(i, 1, new Piece(PieceName.PAWN, PieceColor.BLACK));
             }
 
             // set blanks squares
@@ -254,7 +255,7 @@ namespace Chess
             {
                 for (int j = 0; j < colsCount; j++)
                 {
-                    InsertPiece(new Coordinate(j, i), blankPiece);
+                    InsertPiece(j, i, blankPiece);
                 }
             }
 
@@ -262,18 +263,18 @@ namespace Chess
             // second row
             for (int i = 0; i < colsCount; i++)
             {
-                InsertPiece(new Coordinate(i, 6), new Piece(PieceName.PAWN, PieceColor.WHITE));
+                InsertPiece(i, 6, new Piece(PieceName.PAWN, PieceColor.WHITE));
             }
 
             // first row
-            InsertPiece(new Coordinate(0, 7), new Piece(PieceName.ROOK, PieceColor.WHITE));
-            InsertPiece(new Coordinate(1, 7), new Piece(PieceName.KNIGHT, PieceColor.WHITE));
-            InsertPiece(new Coordinate(2, 7), new Piece(PieceName.BISHOP, PieceColor.WHITE));
-            InsertPiece(new Coordinate(3, 7), new Piece(PieceName.QUEEN, PieceColor.WHITE));
-            InsertPiece(new Coordinate(4, 7), new Piece(PieceName.KING, PieceColor.WHITE));
-            InsertPiece(new Coordinate(5, 7), new Piece(PieceName.BISHOP, PieceColor.WHITE));
-            InsertPiece(new Coordinate(6, 7), new Piece(PieceName.KNIGHT, PieceColor.WHITE));
-            InsertPiece(new Coordinate(7, 7), new Piece(PieceName.ROOK, PieceColor.WHITE));
+            InsertPiece(0, 7, new Piece(PieceName.ROOK, PieceColor.WHITE));
+            InsertPiece(1, 7, new Piece(PieceName.KNIGHT, PieceColor.WHITE));
+            InsertPiece(2, 7, new Piece(PieceName.BISHOP, PieceColor.WHITE));
+            InsertPiece(3, 7, new Piece(PieceName.QUEEN, PieceColor.WHITE));
+            InsertPiece(4, 7, new Piece(PieceName.KING, PieceColor.WHITE));
+            InsertPiece(5, 7, new Piece(PieceName.BISHOP, PieceColor.WHITE));
+            InsertPiece(6, 7, new Piece(PieceName.KNIGHT, PieceColor.WHITE));
+            InsertPiece(7, 7, new Piece(PieceName.ROOK, PieceColor.WHITE));
 
             return true;
         }
@@ -285,12 +286,9 @@ namespace Chess
             {
                 for (int j = 0; j < colsCount; j++)
                 {
-                    InsertPiece(new Coordinate(j, i), blankPiece);
+                    InsertPiece(j, i, blankPiece);
                 }
             }
-            InsertPiece(new Coordinate(3, 7), new Piece(PieceName.KING, PieceColor.WHITE));
-            InsertPiece(new Coordinate(3, 2), new Piece(PieceName.QUEEN, PieceColor.BLACK));
-            InsertPiece(new Coordinate(3, 3), new Piece(PieceName.KNIGHT, PieceColor.BLACK));
         }
 
         public static void PrintBoard()
@@ -334,32 +332,6 @@ namespace Chess
             }
         }
 
-        public static void DoMove(int x1, int y1, int x2, int y2)
-        {
-            Piece piece = GetPiece(x1, y1);
-
-            // ToDo: these conditions execute in every move :/
-            if (piece.abbrivation.Equals("W.K"))
-            {
-                whiteKingFirstMove = true;
-            }
-            else if (piece.abbrivation.Equals("B.K"))
-            {
-                blackKingFirstMove = true;
-            }
-            else if (piece.abbrivation.Equals("W.R"))
-            {
-                blackRookFirstMove = true;
-            }
-            else if (piece.abbrivation.Equals("B.R"))
-            {
-                blackRookFirstMove = true;
-            }
-
-            InsertPiece(new Coordinate(x1, y1), blankPiece);
-            InsertPiece(new Coordinate(x2, y2), piece);
-        }
-
         public static void DoMove(Coordinate coordinate1, Coordinate coordinate2)
         {
             int x1 = coordinate1.x;
@@ -369,14 +341,33 @@ namespace Chess
 
             Piece piece = GetPiece(x1, y1);
 
+            InsertPiece(new Coordinate(x1, y1), blankPiece);
+            InsertPiece(new Coordinate(x2, y2), piece);
+
             // ToDo: these conditions execute in every move :/
-            if (piece.abbrivation.Equals("W.K"))
+            if (!whiteKingFirstMove && piece.abbrivation.Equals("W.K"))
             {
                 whiteKingFirstMove = true;
+                if (coordinate2.isEqual(Coordinate.FromString("g1")))
+                {
+                    DoMove(Coordinate.FromString("h1"), Coordinate.FromString("f1"));
+                }
+                else if (coordinate2.isEqual(Coordinate.FromString("c1")))
+                {
+                    DoMove(Coordinate.FromString("a1"), Coordinate.FromString("d1"));
+                }
             }
-            else if (piece.abbrivation.Equals("B.K"))
+            else if (!blackKingFirstMove && piece.abbrivation.Equals("B.K"))
             {
                 blackKingFirstMove = true;
+                if (coordinate2.isEqual(Coordinate.FromString("g8")))
+                {
+                    DoMove(Coordinate.FromString("h8"), Coordinate.FromString("f8"));
+                }
+                else if (coordinate2.isEqual(Coordinate.FromString("c8")))
+                {
+                    DoMove(Coordinate.FromString("a8"), Coordinate.FromString("d8"));
+                }
             }
             else if (piece.abbrivation.Equals("W.R"))
             {
@@ -386,9 +377,6 @@ namespace Chess
             {
                 blackRookFirstMove = true;
             }
-
-            InsertPiece(new Coordinate(x1, y1), blankPiece);
-            InsertPiece(new Coordinate(x2, y2), piece);
         }
 
         public static void ClearPossibles(List<Coordinate> possibles)
@@ -924,8 +912,9 @@ namespace Chess
         public static List<Coordinate> WhiteKingPossibleCastle()
         {
             List<Coordinate> possibles = new List<Coordinate>();
-            if (!whiteKingFirstMove && !whiteRookFirstMove && IsChecked(PieceColor.WHITE))
+            if (!whiteKingFirstMove && !whiteRookFirstMove && !IsChecked(PieceColor.WHITE))
             {
+                // System.Console.WriteLine(!whiteKingFirstMove + " $ " + !whiteRookFirstMove + " $ " + IsChecked(PieceColor.WHITE));
                 if (
                     IsBlank(Coordinate.FromString("f1"))
                     && IsBlank(Coordinate.FromString("g1"))
@@ -1391,7 +1380,10 @@ namespace Chess
             coordinate1.y = coordinate2.y;
         }
 
-        public static Coordinate GetCoordinateInList(Coordinate coordinate, List<Coordinate> coordinates)
+        public static Coordinate GetCoordinateInList(
+            Coordinate coordinate,
+            List<Coordinate> coordinates
+        )
         {
             foreach (var c in coordinates)
             {
