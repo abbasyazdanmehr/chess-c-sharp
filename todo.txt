@@ -7,3 +7,4 @@
             current.y = coordinate.y;
 
 -   Piece currentPiece = GetPiece(current);
+-   big optimization for BishopPossibleMoves and RookPossibleMoves (we don't need to check blank square)

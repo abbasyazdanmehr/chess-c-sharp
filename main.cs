@@ -127,8 +127,6 @@ namespace Chess
 
                 moveCounter += 1;
             }
-
-            return 0;
         }
 
         public static void EndOfGame()
@@ -142,13 +140,11 @@ namespace Chess
     {
         string name;
         public PieceColor color;
-        int score;
 
         public Player(string inName, PieceColor inColor)
         {
             name = inName;
             color = inColor;
-            score = 0;
         }
 
         public override string ToString()
