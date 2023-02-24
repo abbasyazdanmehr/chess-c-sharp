@@ -240,11 +240,13 @@ namespace Chess
         public static Piece blankPiece = new Piece(PieceName.NONE, PieceColor.NONE);
         public static Piece possiblePiece = new Piece(PieceName.POSSIBLE, PieceColor.NONE);
 
-        public static bool whiteKingFirstMove = false;
-        public static bool blackKingFirstMove = false;
+        public static bool whiteKingFirstMoveDone = false;
+        public static bool blackKingFirstMoveDone = false;
 
-        public static bool whiteRookFirstMove = false;
-        public static bool blackRookFirstMove = false;
+        public static bool H1FirstMoveDone = false;
+        public static bool A1FirstMoveDone = false;
+        public static bool H8FirstMoveDone = false;
+        public static bool A8FirstMoveDone = false;
 
         public static bool InsertPiece(Coordinate coordinate, Piece piece)
         {
@@ -379,15 +381,63 @@ namespace Chess
             InsertPiece(move.from, blankPiece);
             InsertPiece(move.to, piece);
 
-            if (move.type == MoveType.SMALLCASTLE)
+            if (piece.color == PieceColor.WHITE)
             {
-                // InsertPiece(move.from, blankPiece);
-                // InsertPiece(move.to, piece);
+                if (move.from.isEqual(Coordinate.FromString("h1")))
+                    H1FirstMoveDone = true;
+                else if (piece.abbrivation == "W.K")
+                    whiteKingFirstMoveDone = true;
+                else if (move.from.isEqual(Coordinate.FromString("a1")))
+                    A1FirstMoveDone = true;
+                else if (move.to.isEqual(Coordinate.FromString("h8")))
+                    H8FirstMoveDone = true;
+                else if (move.to.isEqual(Coordinate.FromString("a8")))
+                    A8FirstMoveDone = true;
+
+                if (move.type == MoveType.SMALLCASTLE)
+                {
+                    piece = GetPiece(Coordinate.FromString("h1"));
+                    InsertPiece(Coordinate.FromString("h1"), blankPiece);
+                    InsertPiece(Coordinate.FromString("f1"), piece);
+                }
+                else if (move.type == MoveType.BIGCASTLE)
+                {
+                    piece = GetPiece(Coordinate.FromString("a1"));
+                    InsertPiece(Coordinate.FromString("a1"), blankPiece);
+                    InsertPiece(Coordinate.FromString("d1"), piece);
+                }
             }
-            else if (move.type == MoveType.BIGCASTLE)
+            else if (piece.color == PieceColor.BLACK)
             {
-                // InsertPiece(move.from, blankPiece);
-                // InsertPiece(move.to, piece);
+                if (
+                    move.from.isEqual(Coordinate.FromString("h8"))
+                    || move.to.isEqual(Coordinate.FromString("h8"))
+                )
+                    H8FirstMoveDone = true;
+                else if (
+                    move.from.isEqual(Coordinate.FromString("a8"))
+                    || move.to.isEqual(Coordinate.FromString("a8"))
+                )
+                    A8FirstMoveDone = true;
+                else if (piece.abbrivation == "B.K")
+                    blackKingFirstMoveDone = true;
+                else if (move.to.isEqual(Coordinate.FromString("h1")))
+                    H1FirstMoveDone = true;
+                else if (move.to.isEqual(Coordinate.FromString("a1")))
+                    A1FirstMoveDone = true;
+
+                if (move.type == MoveType.SMALLCASTLE)
+                {
+                    piece = GetPiece(Coordinate.FromString("h8"));
+                    InsertPiece(Coordinate.FromString("h8"), blankPiece);
+                    InsertPiece(Coordinate.FromString("f8"), piece);
+                }
+                else if (move.type == MoveType.BIGCASTLE)
+                {
+                    piece = GetPiece(Coordinate.FromString("a8"));
+                    InsertPiece(Coordinate.FromString("a8"), blankPiece);
+                    InsertPiece(Coordinate.FromString("d8"), piece);
+                }
             }
         }
 
@@ -460,7 +510,7 @@ namespace Chess
             return true;
         }
 
-        public static bool IsCheckOKForSmallCastle(PieceColor color)
+        public static bool IsCheckOkForSmallCastle(PieceColor color)
         {
             string strColor;
             if (color == PieceColor.WHITE)
@@ -471,10 +521,12 @@ namespace Chess
             Coordinate kingCoordinate = GetCoordinate(strColor + ".K");
             Piece king = GetPiece(kingCoordinate);
 
+
             InsertPiece(kingCoordinate, blankPiece);
             InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, king);
             if (IsChecked(king.color))
             {
+                InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, blankPiece);
                 InsertPiece(kingCoordinate, king);
                 return false;
             }
@@ -482,13 +534,17 @@ namespace Chess
             InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, blankPiece);
             InsertPiece(kingCoordinate.x + 2, kingCoordinate.y, king);
 
+
             if (IsChecked(king.color))
             {
+                InsertPiece(kingCoordinate.x + 2, kingCoordinate.y, blankPiece);
                 InsertPiece(kingCoordinate, king);
                 return false;
             }
 
+            InsertPiece(kingCoordinate.x + 2, kingCoordinate.y, blankPiece);
             InsertPiece(kingCoordinate, king);
+
             return true;
         }
 
@@ -507,6 +563,7 @@ namespace Chess
             InsertPiece(kingCoordinate.x - 1, kingCoordinate.y, king);
             if (IsChecked(king.color))
             {
+                InsertPiece(kingCoordinate.x - 1, kingCoordinate.y, blankPiece);
                 InsertPiece(kingCoordinate, king);
                 return false;
             }
@@ -516,11 +573,14 @@ namespace Chess
 
             if (IsChecked(king.color))
             {
+                InsertPiece(kingCoordinate.x - 2, kingCoordinate.y, blankPiece);
                 InsertPiece(kingCoordinate, king);
                 return false;
             }
 
+            InsertPiece(kingCoordinate.x - 2, kingCoordinate.y, blankPiece);
             InsertPiece(kingCoordinate, king);
+
             return true;
         }
 
@@ -984,12 +1044,13 @@ namespace Chess
         public static List<Move> WhiteKingPossibleCastle()
         {
             List<Move> possibles = new List<Move>();
-            if (!whiteKingFirstMove && !whiteRookFirstMove && !IsChecked(PieceColor.WHITE))
+            if (!whiteKingFirstMoveDone && !IsChecked(PieceColor.WHITE))
             {
                 if (
                     IsBlank(Coordinate.FromString("f1"))
                     && IsBlank(Coordinate.FromString("g1"))
-                    && IsCheckOKForSmallCastle(PieceColor.WHITE)
+                    && IsCheckOkForSmallCastle(PieceColor.WHITE)
+                    && !H1FirstMoveDone
                 )
                     possibles.Add(
                         new Move(
@@ -1003,6 +1064,7 @@ namespace Chess
                     IsBlank(Coordinate.FromString("c1"))
                     && IsBlank(Coordinate.FromString("d1"))
                     && IsCheckOKForBigCastle(PieceColor.WHITE)
+                    && !A1FirstMoveDone
                 )
                     possibles.Add(
                         new Move(
@@ -1019,9 +1081,9 @@ namespace Chess
         public static List<Move> BlackKingPossibleMoves(Coordinate coordinate)
         {
             List<Move> possibles = new List<Move>();
+
             possibles.AddRange(KingUsualPossibleMoves(coordinate, PieceColor.BLACK));
 
-            // Black castle
             possibles.AddRange(BlackKingPossibleCastle());
 
             return possibles;
@@ -1030,12 +1092,13 @@ namespace Chess
         public static List<Move> BlackKingPossibleCastle()
         {
             List<Move> possibles = new List<Move>();
-            if (!blackKingFirstMove && !blackRookFirstMove && !IsChecked(PieceColor.BLACK))
+            if (!blackKingFirstMoveDone && !IsChecked(PieceColor.BLACK))
             {
                 if (
                     IsBlank(Coordinate.FromString("f8"))
                     && IsBlank(Coordinate.FromString("g8"))
-                    && IsCheckOKForSmallCastle(PieceColor.BLACK)
+                    && IsCheckOkForSmallCastle(PieceColor.BLACK)
+                    && !H8FirstMoveDone
                 )
                     possibles.Add(
                         new Move(
@@ -1049,6 +1112,7 @@ namespace Chess
                     IsBlank(Coordinate.FromString("c8"))
                     && IsBlank(Coordinate.FromString("d8"))
                     && IsCheckOKForBigCastle(PieceColor.BLACK)
+                    && !A8FirstMoveDone
                 )
                     possibles.Add(
                         new Move(
@@ -1482,15 +1546,12 @@ namespace Chess
             coordinate1.y = coordinate2.y;
         }
 
-        public static int GetCoordinateInList(
-            Coordinate coordinate,
-            List<Move> moves
-        )
+        public static int GetCoordinateInList(Coordinate coordinate, List<Move> moves)
         {
             for (int i = 0; i < moves.Count; i++)
                 if (moves[i].to.isEqual(coordinate))
                     return i;
-    
+
             return -1;
         }
 
