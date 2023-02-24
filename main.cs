@@ -39,11 +39,21 @@ namespace Chess
         NONE
     }
 
+    public enum MoveType
+    {
+        MOVEMENT,
+        CAPTURE,
+        CASTLE,
+        NONE
+    }
+
     public class Game
     {
+        public static List<Move> gameMoves = new List<Move>();
+
         public static int Start()
         {
-            System.Console.WriteLine("Game Started ...");
+            System.Console.WriteLine("Game Started...");
             Board.InitialBoard();
             // Board.InitialBoardTest();
 
@@ -54,7 +64,7 @@ namespace Chess
 
             int moveCounter = 0;
 
-            List<Coordinate> possibles = new List<Coordinate>();
+            List<Move> possibles = new List<Move>();
 
             // game loop
             while (true)
@@ -86,11 +96,12 @@ namespace Chess
                     startCoordinate = Coordinate.FromString(command1);
 
                     if (
-                        startCoordinate != (Board.notFoundCoordinate)
+                        startCoordinate != Board.notFoundCoordinate
                         && Board.GetPiece(startCoordinate).color == currentPlayer.color
                     )
                     {
                         possibles = Board.PiecePossibleMoves(startCoordinate);
+                        possibleTakes = Board.PiecePossibleTakes();
                         if (possibles.Count != 0)
                             break;
                     }
@@ -447,6 +458,18 @@ namespace Chess
             return IsBlank(inX, inY) && IsCoordinateInBoard(inX, inY);
         }
 
+        public static bool IsOpponentPiece(int inX, int inY, PieceColor color)
+        {
+            return IsCoordinateInBoard(inX, inY)
+                && !IsBlank(coordinate)
+                && GetPiece(inX, inY).color != color;
+        }
+
+        public static bool IsOpponentPiece(Coordinate coordinate, PieceColor color)
+        {
+            return IsOpponentPiece(coordinate.x, coordinate.y, color);
+        }
+
         public static bool IsCheckOK(int inX, int inY)
         {
             Piece piece = GetPiece(inX, inY);
@@ -524,7 +547,7 @@ namespace Chess
             return true;
         }
 
-        public static List<Coordinate> PiecePossibleMoves(Coordinate coordinate)
+        public static List<Move> PiecePossibleMoves(Coordinate coordinate)
         {
             Piece piece = GetPiece(coordinate);
 
@@ -541,6 +564,7 @@ namespace Chess
             }
             else
             {
+                // ToDo: if piece moves then king is check (this is not true)
                 if (!IsCheckOK(coordinate.x, coordinate.y))
                     return new List<Coordinate>();
 
@@ -576,23 +600,28 @@ namespace Chess
             throw new Exception("$ AY: Wrong Piece in PiecePossibleMoves");
         }
 
-        public static List<Coordinate> WhitePawnPossibleMoves(Coordinate coordinate)
+        public static List<Move> WhitePawnPossibleMoves(Coordinate coordinate)
         {
-            List<Coordinate> possibles = new List<Coordinate>();
+            List<Move> possibles = new List<Move>();
 
+            // movements
             if (
                 coordinate.y == 6
                 && IsBlank(coordinate.x, coordinate.y - 1)
                 && IsBlank(coordinate.x, coordinate.y - 2)
             )
             {
-                possibles.Add(new Coordinate(coordinate.x, coordinate.y - 2));
+                Coordinate to = new Coordinate(coordinate.x, coordinate.y - 2);
+                possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
             }
 
             if (IsDestinationOk(coordinate.x, coordinate.y - 1))
             {
-                possibles.Add(new Coordinate(coordinate.x, coordinate.y - 1));
+                Coordinate to = new Coordinate(coordinate.x, coordinate.y - 1);
+                possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
             }
+
+            if (true) { }
 
             return possibles;
         }
@@ -1464,6 +1493,24 @@ namespace Chess
     {
         public Coordinate from;
         public Coordinate to;
+        public MoveType type;
+
+        public Move(Coordinate from, Coordinate to, MoveType type)
+        {
+            this.from = from;
+            this.to = to;
+            this.type = type;
+        }
+
+        public bool IsEqual(Move move)
+        {
+            return from == move.from && to == move.to && type == move.type;
+        }
+
+        public override string ToString()
+        {
+            return "Move: {from: " + from + ", to: " + to + ", type: " + type + "}";
+        }
     }
 }
 
