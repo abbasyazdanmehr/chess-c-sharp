@@ -223,6 +223,34 @@ namespace Chess
             }
         }
 
+        public static Piece ChoosePiece(PieceColor color)
+        {
+            System.Console.WriteLine("1.Queen, 2.Rook, 3.Bishop, 4.Knight");
+            Piece newPiece = Board.blankPiece;
+            while (newPiece == Board.blankPiece)
+            {
+                System.Console.Write("Choose new piece by number: ");
+                string command = Console.ReadLine();
+                if (command == "1")
+                {
+                    newPiece = new Piece(PieceName.QUEEN, color);
+                }
+                else if (command == "2")
+                {
+                    newPiece = new Piece(PieceName.ROOK, color);
+                }
+                else if (command == "3")
+                {
+                    newPiece = new Piece(PieceName.BISHOP, color);
+                }
+                else if (command == "4")
+                {
+                    newPiece = new Piece(PieceName.KNIGHT, color);
+                }
+            }
+            return newPiece;
+        }
+
         public override string ToString()
         {
             return abbrivation;
@@ -406,6 +434,12 @@ namespace Chess
                     InsertPiece(Coordinate.FromString("a1"), blankPiece);
                     InsertPiece(Coordinate.FromString("d1"), piece);
                 }
+                else if (piece.name == PieceName.PAWN && move.to.y == 0)
+                {
+                    InsertPiece(move.to, blankPiece);
+                    Piece newPiece = Piece.ChoosePiece(PieceColor.WHITE);
+                    InsertPiece(move.to.x, move.to.y, newPiece);
+                }
             }
             else if (piece.color == PieceColor.BLACK)
             {
@@ -437,6 +471,12 @@ namespace Chess
                     piece = GetPiece(Coordinate.FromString("a8"));
                     InsertPiece(Coordinate.FromString("a8"), blankPiece);
                     InsertPiece(Coordinate.FromString("d8"), piece);
+                }
+                else if (piece.name == PieceName.PAWN && move.to.y == 7)
+                {
+                    InsertPiece(move.to, blankPiece);
+                    Piece newPiece = Piece.ChoosePiece(PieceColor.BLACK);
+                    InsertPiece(move.to.x, move.to.y, newPiece);
                 }
             }
         }
@@ -521,7 +561,6 @@ namespace Chess
             Coordinate kingCoordinate = GetCoordinate(strColor + ".K");
             Piece king = GetPiece(kingCoordinate);
 
-
             InsertPiece(kingCoordinate, blankPiece);
             InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, king);
             if (IsChecked(king.color))
@@ -533,7 +572,6 @@ namespace Chess
 
             InsertPiece(kingCoordinate.x + 1, kingCoordinate.y, blankPiece);
             InsertPiece(kingCoordinate.x + 2, kingCoordinate.y, king);
-
 
             if (IsChecked(king.color))
             {
