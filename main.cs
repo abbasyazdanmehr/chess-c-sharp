@@ -32,6 +32,13 @@ namespace Chess
         POSSIBLE
     }
 
+    public enum InputFormat
+    {
+        TWOSTEPS,
+        ONESTEP,
+        NONE
+    }
+
     public enum PieceColor
     {
         WHITE,
@@ -58,6 +65,8 @@ namespace Chess
             Board.InitialBoard();
             // Board.InitialBoardTest();
 
+            InputFormat inputFormat = InputFormat.ONESTEP;
+
             Player player1 = new Player("Player 1", PieceColor.WHITE);
             Player player2 = new Player("Player 2", PieceColor.BLACK);
 
@@ -80,54 +89,113 @@ namespace Chess
                 Board.PrintBoard();
 
                 Coordinate startCoordinate;
-                while (true)
-                {
-                    System.Console.Write("Choose Start Coordinate: ");
-                    string command1 = Console.ReadLine();
-
-                    if (command1.Equals("exit"))
-                    {
-                        EndOfGame();
-                    }
-
-                    startCoordinate = Coordinate.FromString(command1);
-
-                    if (
-                        startCoordinate != Board.notFoundCoordinate
-                        && Board.GetPiece(startCoordinate).color == currentPlayer.color
-                    )
-                    {
-                        possibleMoves = Board.PiecePossibleMoves(startCoordinate);
-                        if (possibleMoves.Count != 0)
-                            break;
-                    }
-                }
-                System.Console.WriteLine("start coordinate: " + startCoordinate);
-
-                // showing possible moves
-                Board.InsertPossibleMoves(possibleMoves);
-
-                Board.PrintBoard();
-
-                // move is obligation after toching piece (touch-move rule in chess)
                 Coordinate destinationCoordinate;
                 int moveIndex;
-                while (true)
+                Move inputMove;
+
+                if (inputFormat == InputFormat.TWOSTEPS)
                 {
-                    System.Console.Write("Choose Destination Coordinate : ");
-                    string command2 = Console.ReadLine();
-                    destinationCoordinate = Coordinate.FromString(command2);
+                    while (true)
+                    {
+                        System.Console.Write("Choose Start Coordinate: ");
+                        string command1 = Console.ReadLine();
 
-                    moveIndex = Coordinate.GetCoordinateInList(
-                        destinationCoordinate,
-                        possibleMoves
-                    );
+                        if (command1.Equals("exit"))
+                        {
+                            EndOfGame();
+                        }
 
-                    if (moveIndex != -1)
-                        break;
+                        startCoordinate = Coordinate.FromString(command1);
+
+                        if (
+                            startCoordinate != Board.notFoundCoordinate
+                            && Board.GetPiece(startCoordinate).color == currentPlayer.color
+                        )
+                        {
+                            possibleMoves = Board.PiecePossibleMoves(startCoordinate);
+                            if (possibleMoves.Count != 0)
+                                break;
+                        }
+                    }
+                    System.Console.WriteLine("start coordinate: " + startCoordinate);
+
+                    // showing possible moves
+                    Board.InsertPossibleMoves(possibleMoves);
+
+                    Board.PrintBoard();
+
+                    // move is obligation after toching piece (touch-move rule in chess)
+                    while (true)
+                    {
+                        System.Console.Write("Choose Destination Coordinate : ");
+                        string command2 = Console.ReadLine();
+                        destinationCoordinate = Coordinate.FromString(command2);
+
+                        moveIndex = Coordinate.GetCoordinateInList(
+                            destinationCoordinate,
+                            possibleMoves
+                        );
+
+                        if (moveIndex != -1)
+                            break;
+                    }
+
+                    inputMove = possibleMoves[moveIndex];
+                }
+                else if (inputFormat == InputFormat.ONESTEP)
+                {
+                    while (true)
+                    {
+                        System.Console.Write("Move (example: e2 e4): ");
+                        string command1 = Console.ReadLine();
+
+                        if (command1.Equals("exit"))
+                        {
+                            EndOfGame();
+                        }
+
+                        string[] inps = command1.Trim().Split(' ');
+
+                        if (inps.Length != 2)
+                        {
+                            System.Console.WriteLine("Bad Format!");
+                            continue;
+                        }
+
+                        startCoordinate = Coordinate.FromString(inps[0]);
+                        destinationCoordinate = Coordinate.FromString(inps[1]);
+
+                        if (
+                            startCoordinate != Board.notFoundCoordinate
+                            && Board.GetPiece(startCoordinate).color == currentPlayer.color
+                        )
+                        {
+                            possibleMoves = Board.PiecePossibleMoves(startCoordinate);
+                            if (possibleMoves.Count == 0)
+                                continue;
+
+                            moveIndex = Coordinate.GetCoordinateInList(
+                                destinationCoordinate,
+                                possibleMoves
+                            );
+
+
+                            if (moveIndex != -1)
+                            {
+                                inputMove = possibleMoves[moveIndex];
+                                break;
+                            }
+
+                            Board.ClearPossibleMoves(possibleMoves);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new Exception("$ AY: Wrong inputFormat!");
                 }
 
-                Move inputMove = possibleMoves[moveIndex];
+                System.Console.WriteLine(moveIndex);
 
                 Board.ClearPossibleMoves(possibleMoves);
 
