@@ -90,34 +90,57 @@ namespace Chess
 
                 Coordinate startCoordinate;
                 Coordinate destinationCoordinate;
-                int moveIndex;
-                Move inputMove;
+                int moveIndex = -1;
+                Move inputMove = Move.noMove;
+
+                System.Console.WriteLine("example: (e2) or (e2 e4)");
+                System.Console.Write("Move: ");
+                string command = Console.ReadLine();
+
+                if (command.Equals("exit"))
+                {
+                    EndOfGame();
+                }
+
+                string[] inps = command.Trim().Split(' ');
+
+                if (inps.Length == 1)
+                {
+                    inputFormat = InputFormat.TWOSTEPS;
+                    System.Console.WriteLine(1);
+                }
+                else if (inps.Length == 2)
+                {
+                    inputFormat = InputFormat.ONESTEP;
+                    System.Console.WriteLine(2);
+                }
+                else
+                {
+                    System.Console.WriteLine("not correct address count!");
+                }
 
                 if (inputFormat == InputFormat.TWOSTEPS)
                 {
-                    while (true)
+                    System.Console.WriteLine("there");
+                    string command1 = inps[0];
+
+                    startCoordinate = Coordinate.FromString(command1);
+                    if (
+                        startCoordinate != Board.notFoundCoordinate
+                        && Board.GetPiece(startCoordinate).color == currentPlayer.color
+                    )
                     {
-                        System.Console.Write("Choose Start Coordinate: ");
-                        string command1 = Console.ReadLine();
-
-                        if (command1.Equals("exit"))
-                        {
-                            EndOfGame();
-                        }
-
-                        startCoordinate = Coordinate.FromString(command1);
-
-                        if (
-                            startCoordinate != Board.notFoundCoordinate
-                            && Board.GetPiece(startCoordinate).color == currentPlayer.color
-                        )
-                        {
-                            possibleMoves = Board.PiecePossibleMoves(startCoordinate);
-                            if (possibleMoves.Count != 0)
-                                break;
-                        }
+                        possibleMoves = Board.PiecePossibleMoves(startCoordinate);
+                        if (possibleMoves.Count == 0)
+                            continue;
                     }
-                    System.Console.WriteLine("start coordinate: " + startCoordinate);
+                    else
+                    {
+                        continue;
+                    }
+
+                    System.Console.WriteLine("Start Coordinate: " + startCoordinate);
+                    System.Console.WriteLine("* You must choose your move destinaiton or resign!");
 
                     // showing possible moves
                     Board.InsertPossibleMoves(possibleMoves);
@@ -144,50 +167,25 @@ namespace Chess
                 }
                 else if (inputFormat == InputFormat.ONESTEP)
                 {
-                    while (true)
+                    startCoordinate = Coordinate.FromString(inps[0]);
+                    destinationCoordinate = Coordinate.FromString(inps[1]);
+
+                    if (
+                        startCoordinate != Board.notFoundCoordinate
+                        && Board.GetPiece(startCoordinate).color == currentPlayer.color
+                    )
                     {
-                        System.Console.Write("Move (example: e2 e4): ");
-                        string command1 = Console.ReadLine();
-
-                        if (command1.Equals("exit"))
-                        {
-                            EndOfGame();
-                        }
-
-                        string[] inps = command1.Trim().Split(' ');
-
-                        if (inps.Length != 2)
-                        {
-                            System.Console.WriteLine("Bad Format!");
+                        possibleMoves = Board.PiecePossibleMoves(startCoordinate);
+                        if (possibleMoves.Count == 0)
                             continue;
-                        }
 
-                        startCoordinate = Coordinate.FromString(inps[0]);
-                        destinationCoordinate = Coordinate.FromString(inps[1]);
+                        moveIndex = Coordinate.GetCoordinateInList(
+                            destinationCoordinate,
+                            possibleMoves
+                        );
 
-                        if (
-                            startCoordinate != Board.notFoundCoordinate
-                            && Board.GetPiece(startCoordinate).color == currentPlayer.color
-                        )
-                        {
-                            possibleMoves = Board.PiecePossibleMoves(startCoordinate);
-                            if (possibleMoves.Count == 0)
-                                continue;
-
-                            moveIndex = Coordinate.GetCoordinateInList(
-                                destinationCoordinate,
-                                possibleMoves
-                            );
-
-
-                            if (moveIndex != -1)
-                            {
-                                inputMove = possibleMoves[moveIndex];
-                                break;
-                            }
-
-                            Board.ClearPossibleMoves(possibleMoves);
-                        }
+                        if (moveIndex != -1)
+                            inputMove = possibleMoves[moveIndex];
                     }
                 }
                 else
@@ -1677,6 +1675,12 @@ namespace Chess
         public Coordinate from;
         public Coordinate to;
         public MoveType type;
+
+        public static Move noMove = new Move(
+            Board.notFoundCoordinate,
+            Board.notFoundCoordinate,
+            MoveType.NONE
+        );
 
         public Move(Coordinate from, Coordinate to, MoveType type)
         {
