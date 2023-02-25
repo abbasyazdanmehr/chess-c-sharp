@@ -71,6 +71,7 @@ namespace Chess
             Player player2 = new Player("Player 2", PieceColor.BLACK);
 
             Player currentPlayer = player1;
+            Player opponent = player2;
 
             int moveCounter = 0;
 
@@ -80,9 +81,15 @@ namespace Chess
             while (true)
             {
                 if (moveCounter % 2 == 0)
+                {
                     currentPlayer = player1;
+                    opponent = player2;
+                }
                 else
+                {
                     currentPlayer = player2;
+                    opponent = player1;
+                }
 
                 Board.ClearPossibleMoves(possibleMoves);
 
@@ -97,22 +104,18 @@ namespace Chess
                 System.Console.Write("Move: ");
                 string command = Console.ReadLine();
 
-                if (command.Equals("exit"))
-                {
-                    EndOfGame();
-                }
+                if (command.Equals("resign"))
+                    EndOfGame(currentPlayer);
 
                 string[] inps = command.Trim().Split(' ');
 
                 if (inps.Length == 1)
                 {
                     inputFormat = InputFormat.TWOSTEPS;
-                    System.Console.WriteLine(1);
                 }
                 else if (inps.Length == 2)
                 {
                     inputFormat = InputFormat.ONESTEP;
-                    System.Console.WriteLine(2);
                 }
                 else
                 {
@@ -121,7 +124,6 @@ namespace Chess
 
                 if (inputFormat == InputFormat.TWOSTEPS)
                 {
-                    System.Console.WriteLine("there");
                     string command1 = inps[0];
 
                     startCoordinate = Coordinate.FromString(command1);
@@ -193,26 +195,33 @@ namespace Chess
                     throw new Exception("$ AY: Wrong inputFormat!");
                 }
 
-                System.Console.WriteLine(moveIndex);
-
                 Board.ClearPossibleMoves(possibleMoves);
 
                 Board.DoMove(inputMove);
+
+                if (Board.IsMated(opponent.color))
+                {
+                    EndOfGame(currentPlayer);
+                }
 
                 moveCounter += 1;
             }
         }
 
-        public static void EndOfGame()
+        public static void EndOfGame(Player winner)
         {
-            System.Console.WriteLine("GoodBy!");
+            Board.PrintBoard();
+            System.Console.WriteLine(
+                winner.name + " with color " + winner.color + " won the Game!"
+            );
+            System.Console.WriteLine("Good Night Kids!");
             System.Environment.Exit(0);
         }
     }
 
-    class Player
+    public class Player
     {
-        string name;
+        public string name;
         public PieceColor color;
 
         public Player(string inName, PieceColor inColor)
@@ -471,7 +480,6 @@ namespace Chess
         public static void DoMove(Move move)
         {
             Piece piece = GetPiece(move.from);
-
             InsertPiece(move.from, blankPiece);
             InsertPiece(move.to, piece);
 
@@ -603,16 +611,22 @@ namespace Chess
             return IsOpponentPiece(coordinate.x, coordinate.y, color);
         }
 
-        public static bool IsCheckOK(int inX, int inY)
+        public static bool IsCheckOkAfterMove(Move move)
         {
-            Piece piece = GetPiece(inX, inY);
-            InsertPiece(inX, inY, blankPiece);
-            if (IsChecked(piece.color))
+            Piece fromPiece = GetPiece(move.from);
+            Piece toPiece = GetPiece(move.to);
+            InsertPiece(move.from, blankPiece);
+            InsertPiece(move.to, fromPiece);
+
+            if (IsChecked(fromPiece.color))
             {
-                InsertPiece(inX, inY, piece);
+                InsertPiece(move.to, toPiece);
+                InsertPiece(move.from, fromPiece);
                 return false;
             }
-            InsertPiece(inX, inY, piece);
+
+            InsertPiece(move.to, toPiece);
+            InsertPiece(move.from, fromPiece);
             return true;
         }
 
@@ -624,7 +638,7 @@ namespace Chess
             else
                 strColor = "B";
 
-            Coordinate kingCoordinate = GetCoordinate(strColor + ".K");
+            Coordinate kingCoordinate = GetCoordinates(strColor + ".K")[0];
             Piece king = GetPiece(kingCoordinate);
 
             InsertPiece(kingCoordinate, blankPiece);
@@ -660,7 +674,7 @@ namespace Chess
             else
                 strColor = "B";
 
-            Coordinate kingCoordinate = GetCoordinate(strColor + ".K");
+            Coordinate kingCoordinate = GetCoordinates(strColor + ".K")[0];
             Piece king = GetPiece(kingCoordinate);
 
             InsertPiece(kingCoordinate, blankPiece);
@@ -688,6 +702,51 @@ namespace Chess
             return true;
         }
 
+        public static List<Move> AllPossibleMoves(PieceColor color)
+        {
+            List<Move> possibleMoves = new List<Move>();
+            string sColor = Stringer.strColor(color);
+
+            List<Coordinate> coordinates = new List<Coordinate>();
+            coordinates = GetCoordinates(sColor + ".N");
+            foreach (var coordinate in coordinates)
+            {
+                possibleMoves.AddRange(PiecePossibleMoves(coordinate));
+            }
+
+            coordinates = GetCoordinates(sColor + ".B");
+            foreach (var coordinate in coordinates)
+            {
+                possibleMoves.AddRange(PiecePossibleMoves(coordinate));
+            }
+
+            coordinates = GetCoordinates(sColor + ".R");
+            foreach (var coordinate in coordinates)
+            {
+                possibleMoves.AddRange(PiecePossibleMoves(coordinate));
+            }
+
+            coordinates = GetCoordinates(sColor + ".Q");
+            foreach (var coordinate in coordinates)
+            {
+                possibleMoves.AddRange(PiecePossibleMoves(coordinate));
+            }
+
+            coordinates = GetCoordinates(sColor + ".P");
+            foreach (var coordinate in coordinates)
+            {
+                possibleMoves.AddRange(PiecePossibleMoves(coordinate));
+            }
+
+            coordinates = GetCoordinates(sColor + ".K");
+            foreach (var coordinate in coordinates)
+            {
+                possibleMoves.AddRange(PiecePossibleMoves(coordinate));
+            }
+
+            return possibleMoves;
+        }
+
         public static List<Move> PiecePossibleMoves(Coordinate coordinate)
         {
             Piece piece = GetPiece(coordinate);
@@ -705,10 +764,6 @@ namespace Chess
             }
             else
             {
-                // ToDo: if piece moves then king is check (this is not true)
-                if (!IsCheckOK(coordinate.x, coordinate.y))
-                    return new List<Move>();
-
                 if (piece.name == PieceName.KNIGHT)
                 {
                     return KnightPossibleMoves(coordinate, piece.color);
@@ -753,26 +808,34 @@ namespace Chess
             )
             {
                 Coordinate to = new Coordinate(coordinate.x, coordinate.y - 2);
-                possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
+                Move move = new Move(coordinate, to, MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
             }
 
             if (IsDestinationOk(coordinate.x, coordinate.y - 1))
             {
                 Coordinate to = new Coordinate(coordinate.x, coordinate.y - 1);
-                possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
+                Move move = new Move(coordinate, to, MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
             }
 
             // captures
             if (IsOpponentPiece(coordinate.x - 1, coordinate.y - 1, PieceColor.WHITE))
             {
                 Coordinate to = new Coordinate(coordinate.x - 1, coordinate.y - 1);
-                possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
+                Move move = new Move(coordinate, to, MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
             }
 
             if (IsOpponentPiece(coordinate.x + 1, coordinate.y - 1, PieceColor.WHITE))
             {
                 Coordinate to = new Coordinate(coordinate.x + 1, coordinate.y - 1);
-                possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
+                Move move = new Move(coordinate, to, MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
             }
 
             return possibles;
@@ -790,26 +853,34 @@ namespace Chess
             )
             {
                 Coordinate to = new Coordinate(coordinate.x, coordinate.y + 2);
-                possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
+                Move move = new Move(coordinate, to, MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
             }
 
             if (IsDestinationOk(coordinate.x, coordinate.y + 1))
             {
                 Coordinate to = new Coordinate(coordinate.x, coordinate.y + 1);
-                possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
+                Move move = new Move(coordinate, to, MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.MOVEMENT));
             }
 
             // captures
             if (IsOpponentPiece(coordinate.x - 1, coordinate.y + 1, PieceColor.BLACK))
             {
                 Coordinate to = new Coordinate(coordinate.x - 1, coordinate.y + 1);
-                possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
+                Move move = new Move(coordinate, to, MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
             }
 
             if (IsOpponentPiece(coordinate.x + 1, coordinate.y + 1, PieceColor.BLACK))
             {
                 Coordinate to = new Coordinate(coordinate.x + 1, coordinate.y + 1);
-                possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
+                Move move = new Move(coordinate, to, MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(new Move(coordinate, to, MoveType.CAPTURE));
             }
 
             return possibles;
@@ -824,58 +895,122 @@ namespace Chess
             current.x = coordinate.x + 1;
             current.y = coordinate.y + 2;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x + 2;
             current.y = coordinate.y + 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y + 2;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 2;
             current.y = coordinate.y + 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x + 1;
             current.y = coordinate.y - 2;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x + 2;
             current.y = coordinate.y - 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y - 2;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 2;
             current.y = coordinate.y - 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             return possibles;
         }
@@ -900,11 +1035,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y;
@@ -921,11 +1064,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y;
@@ -942,11 +1093,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y;
@@ -963,11 +1122,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             return possibles;
         }
@@ -991,11 +1158,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y;
@@ -1011,11 +1186,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y;
@@ -1031,11 +1214,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y;
@@ -1051,11 +1242,19 @@ namespace Chess
                     break;
 
                 if (IsDestinationOk(current))
-                    possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+                {
+                    Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                    if (IsCheckOkAfterMove(move))
+                        possibles.Add(move);
+                }
             }
 
             if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             return possibles;
         }
@@ -1078,58 +1277,122 @@ namespace Chess
             current.x = coordinate.x + 1;
             current.y = coordinate.y;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x + 1;
             current.y = coordinate.y + 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y + 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y + 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x - 1;
             current.y = coordinate.y - 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x;
             current.y = coordinate.y - 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             current.x = coordinate.x + 1;
             current.y = coordinate.y - 1;
             if (IsDestinationOk(current))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.MOVEMENT));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.MOVEMENT);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
             else if (IsOpponentPiece(current, color))
-                possibles.Add(new Move(coordinate, current.Copy(), MoveType.CAPTURE));
+            {
+                Move move = new Move(coordinate, current.Copy(), MoveType.CAPTURE);
+                if (IsCheckOkAfterMove(move))
+                    possibles.Add(move);
+            }
 
             return possibles;
         }
@@ -1250,7 +1513,7 @@ namespace Chess
                 enemyColor = "W";
             }
 
-            Coordinate kingCoordinate = GetCoordinate(friendColor + ".K");
+            Coordinate kingCoordinate = GetCoordinates(friendColor + ".K")[0];
 
             Coordinate current = kingCoordinate.Copy();
 
@@ -1569,6 +1832,11 @@ namespace Chess
             return false;
         }
 
+        public static bool IsMated(PieceColor color)
+        {
+            return AllPossibleMoves(color).Count == 0;
+        }
+
         public static bool IsCoordinateInBoard(int inX, int inY)
         {
             if (inX < 0 || inY < 0 || inX >= colsCount || inY >= rowsCount)
@@ -1589,19 +1857,15 @@ namespace Chess
             return true;
         }
 
-        public static Coordinate GetCoordinate(string abbrivation)
+        public static List<Coordinate> GetCoordinates(string abbrivation)
         {
+            List<Coordinate> coordinates = new List<Coordinate>();
             for (int i = 0; i < rowsCount; i++)
-            {
                 for (int j = 0; j < colsCount; j++)
-                {
                     if (GetPiece(i, j).abbrivation == abbrivation)
-                    {
-                        return new Coordinate(i, j);
-                    }
-                }
-            }
-            return notFoundCoordinate;
+                        coordinates.Add(new Coordinate(i, j));
+
+            return coordinates;
         }
     }
 
@@ -1713,6 +1977,16 @@ namespace MyUtil
                 outp += inp;
             }
             return outp;
+        }
+
+        public static string strColor(PieceColor color)
+        {
+            if (color == PieceColor.WHITE)
+                return "W";
+            else if (color == PieceColor.BLACK)
+                return "B";
+            else
+                throw new Exception("$ AY: Bad Color");
         }
     }
 
