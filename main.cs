@@ -178,6 +178,7 @@ namespace Chess
                     )
                     {
                         possibleMoves = Board.PiecePossibleMoves(startCoordinate);
+                        Move.PrintList(possibleMoves);
                         if (possibleMoves.Count == 0)
                             continue;
 
@@ -188,6 +189,11 @@ namespace Chess
 
                         if (moveIndex != -1)
                             inputMove = possibleMoves[moveIndex];
+                    }
+
+                    if (moveIndex == -1)
+                    {
+                        continue;
                     }
                 }
                 else
@@ -1951,6 +1957,14 @@ namespace Chess
             this.from = from;
             this.to = to;
             this.type = type;
+        }
+
+        public static void PrintList(List<Move> moves)
+        {
+          for (int i = 0; i < moves.Count; i++)
+          {
+            Console.WriteLine(moves[i].ToString());
+          }
         }
 
         public bool IsEqual(Move move)
